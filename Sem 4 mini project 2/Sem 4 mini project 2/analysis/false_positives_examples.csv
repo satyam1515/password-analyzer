@@ -1,0 +1,1 @@
+password,source_category,length,has_upper,has_lower,has_digit,has_special,rules_score,rules_classification,entropy_bits,entropy_score,entropy_classification,pattern_score,has_pattern,zxcvbn_score,hybrid_score,hybrid_classification

@@ -1,0 +1,10 @@
+metric,value
+Person 1 Mean Hybrid,57.91
+Person 2 Mean Hybrid,59.75
+Person 1 Std Dev,22.44
+Person 2 Std Dev,21.78
+Pearson Correlation,0.9978
+Agreement Rate (%),64.19
+Person 1 Median,55.0
+Person 2 Median,57.42
+Mean Absolute Difference,2.0

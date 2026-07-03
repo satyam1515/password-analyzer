@@ -1,0 +1,16 @@
+variable_1,variable_2,pearson_r,pearson_p,spearman_r,spearman_p
+entropy_bits,rules_score,0.7888,0.0,0.8681,0.0
+entropy_bits,length,0.9775,0.0,0.9425,0.0
+entropy_bits,pattern_score,0.0757,8.731480443140597e-14,0.0489,1.4477083918640083e-06
+entropy_bits,zxcvbn_score,0.8595,0.0,0.8064,0.0
+entropy_bits,hybrid_score,0.9201,0.0,0.9444,0.0
+rules_score,length,0.7175,0.0,0.7513,0.0
+rules_score,pattern_score,0.1119,2.29806430099637e-28,0.1306,3.9716521967458856e-38
+rules_score,zxcvbn_score,0.7516,0.0,0.7666,0.0
+rules_score,hybrid_score,0.917,0.0,0.9385,0.0
+length,pattern_score,-0.023,0.023571847882211824,-0.0796,4.405950454196798e-15
+length,zxcvbn_score,0.8319,0.0,0.7707,0.0
+length,hybrid_score,0.872,0.0,0.8536,0.0
+pattern_score,zxcvbn_score,0.124,1.6849252414974343e-34,0.1301,8.045530201480737e-38
+pattern_score,hybrid_score,0.1698,1.4410648996022107e-63,0.1834,4.439343163927344e-74
+zxcvbn_score,hybrid_score,0.9377,0.0,0.8938,0.0

@@ -1,0 +1,25 @@
+# ============================================================
+# requirements.txt
+# Password Strength Comparative Analysis — Research Project
+# ============================================================
+
+# Web framework
+Flask>=2.3.0
+
+# Password strength estimator (Dropbox's zxcvbn)
+zxcvbn>=4.4.28
+
+# Data visualization (pre-built wheel, no compiler needed)
+matplotlib>=3.7.0
+
+# Scientific computing (pre-built wheel)
+numpy>=1.24.0
+
+# Data analysis (pre-built wheel)
+pandas>=2.0.0
+
+# Werkzeug (Flask dependency)
+Werkzeug>=2.3.0
+
+# HTTP requests for HaveIBeenPwned API
+requests>=2.28.0

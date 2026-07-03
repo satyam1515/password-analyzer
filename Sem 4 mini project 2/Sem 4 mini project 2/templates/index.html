@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A professional research application performing a comparative analysis of password strength metrics using rules-based and entropy-based evaluation methods." />
+  <meta name="keywords" content="password strength, entropy, rules-based, zxcvbn, cybersecurity, research" />
+  <meta name="author" content="Password Strength Research Project" />
+
+  <title>Password Strength Analyzer — Comparative Metric Analysis</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Favicon (inline SVG) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LOADING OVERLAY
+══════════════════════════════════════════════════════════════ -->
+<div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+  <div class="loading-spinner"></div>
+  
+  <div class="loading-text">
+    <i class="fas fa-microchip me-2"></i>ANALYSING PASSWORD…
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════════════════════════ -->
+<nav class="navbar navbar-dark sticky-top px-3 px-md-4" aria-label="Main navigation">
+  <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+    <i class="fas fa-shield-halved text-info fs-5"></i>
+    <span class="navbar-brand-text">PASSMETRIC</span>
+  </a>
+  <div class="d-flex align-items-center gap-3">
+    <span class="nav-badge"><i class="fas fa-flask me-1"></i>Research Project</span>
+    <span class="text-secondary small d-none d-sm-inline">
+      
+    </span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HERO SECTION
+══════════════════════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="container">
+    <div class="hero-icon-wrapper">
+      <i class="fas fa-lock"></i>
+    </div>
+    <h1 class="hero-title">
+      Password Strength Analyzer
+    </h1>
+   
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PASSWORD INPUT SECTION
+══════════════════════════════════════════════════════════════ -->
+<section class="input-section">
+  <div class="container">
+    <div class="password-card">
+      <label for="passwordInput" class="input-label">
+        <i class="fas fa-keyboard me-2"></i>Enter Password to Analyse
+      </label>
+
+      <!-- Input row -->
+      <div class="pw-input-group mb-3">
+        <input
+          type="password"
+          id="passwordInput"
+          class="flex-grow-1"
+          placeholder="Type or paste a password…"
+          autocomplete="new-password"
+          spellcheck="false"
+          maxlength="512"
+          aria-label="Password input"
+        />
+        <button
+          id="togglePwBtn"
+          class="btn-toggle-pw"
+          type="button"
+          title="Show Password"
+          aria-label="Toggle password visibility"
+        >
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+
+      <!-- Live strength meter (Removed per user request) -->
+      <!--
+      <div class="strength-meter mb-3" title="Live strength preview">
+        <div id="strengthMeterBar" class="strength-meter-bar"></div>
+      </div>
+      -->
+
+      <!-- Pwned Alert Banner (Hidden by Default) -->
+      <div id="pwnedAlertBanner" class="alert mb-3" style="display: none; background: rgba(248, 81, 73, 0.15); border: 1px solid #f85149; color: #ff7b72; border-radius: 8px;">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-triangle-exclamation fs-4 me-3"></i>
+          <div>
+            <strong>CRITICAL THREAT:</strong> This password has been exposed in <span id="pwnedCountText" class="fw-bold"></span> real-world data breaches.
+           
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="d-flex flex-wrap gap-2">
+        <button id="analyzeBtn" class="btn-analyze" type="button" aria-label="Analyse password">
+          <i class="fas fa-magnifying-glass me-2"></i>Analyse Password
+        </button>
+        <button id="clearBtn" class="btn-clear" type="button" aria-label="Clear input">
+          <i class="fas fa-rotate-left me-2"></i>Clear
+        </button>
+        <small class="d-flex align-items-center ms-auto text-muted" style="font-size:.75rem;">
+          <i class="fas fa-info-circle me-1 text-info"></i><span style="color: #ffffff;">Use space to analyze more than one password</span>
+        </small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     BATCH ANALYSIS PANEL (Hidden by Default)
+══════════════════════════════════════════════════════════════ -->
+<section class="py-3" id="batchAnalysisSection" style="display: none;">
+  <div class="container">
+    <div class="panel-card" style="grid-column: 1 / -1;">
+      <div class="panel-header" style="background: linear-gradient(135deg, #1f242c 0%, #161b22 100%); border-bottom: 1px solid var(--border-color);">
+        <div class="panel-icon" style="color: var(--accent-blue); background: rgba(88, 166, 255, 0.1);">
+          <i class="fas fa-users-viewfinder"></i>
+        </div>
+        <div>
+          <div class="panel-title">Analysis Comparison</div>
+          <div class="panel-subtitle">Comparing multiple passwords </div>
+        </div>
+      </div>
+      <div class="panel-body" style="overflow-x: auto;">
+        <table class="table table-dark table-hover text-center" style="background: transparent; border-color: var(--border-color);">
+          <thead>
+            <tr>
+              <th class="text-start">Password</th>
+              <th>Length</th>
+              <th>Rules</th>
+              <th>Entropy</th>
+              <th>Dict-Aware</th>
+              <th>Pattern</th>
+              <th>Hybrid</th>
+              <th>Pwned</th>
+              <th>Class</th>
+            </tr>
+          </thead>
+          <tbody id="batchTableBody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN ANALYSIS PANELS (Left + Right)
+══════════════════════════════════════════════════════════════ -->
+<section class="py-3" id="singleAnalysisSection">
+  <div class="container">
+    <div class="analysis-grid">
+
+      <!-- ════════════════════════════════════
+           LEFT PANEL — Rules-Based Analysis
+      ═════════════════════════════════════════ -->
+      <div class="panel-card" id="rulesPanel">
+        <div class="panel-header rules-header">
+          <div class="panel-icon rules-icon">
+            <i class="fas fa-list-check"></i>
+          </div>
+          <div>
+            <div class="panel-title">Rules-Based Evaluation</div>
+            <div class="panel-subtitle">Checklist scoring • 0–100 scale</div>
+          </div>
+        </div>
+
+        <div class="panel-body">
+
+          <!-- Score display -->
+          <div class="score-display">
+            <div class="score-ring" aria-label="Rules score ring">
+              <svg viewBox="0 0 70 70">
+                <circle class="score-ring-bg" cx="35" cy="35" r="32" />
+                <circle id="rulesRingFill" class="score-ring-fill" cx="35" cy="35" r="32"
+                        stroke-dasharray="201" stroke-dashoffset="201" />
+              </svg>
+              <div class="score-ring-text">
+                <span id="rulesScore" class="score-number">0</span>
+                <span class="score-label-sm">/100</span>
+              </div>
+            </div>
+            <div class="score-info">
+              <div id="rulesBadge" class="score-strength-badge">—</div>
+              <div id="rulesPassed" class="text-muted mt-1" style="font-size:.78rem;"></div>
+              <small class="text-muted" style="color: white !important;">Rules-Based Score</small>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="progress-wrap" title="Rules score progress">
+            <div id="rulesProgress" class="progress-bar-animated"></div>
+          </div>
+
+          <!-- Section title -->
+          <div class="section-title"><i class="fas fa-check-square me-1"></i>Rule Checklist</div>
+
+          <!-- Rules list -->
+          <ul class="rules-list" id="rulesList" aria-label="Password rules">
+            <li class="placeholder-state">
+              <i class="fas fa-lock"></i>
+              <p>Enter a password to see rules evaluation</p>
+            </li>
+          </ul>
+
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════
+           RIGHT PANEL — Entropy-Based Analysis
+      ═════════════════════════════════════════ -->
+      <div class="panel-card" id="entropyPanel">
+        <div class="panel-header entropy-header">
+          <div class="panel-icon entropy-icon">
+            <i class="fas fa-wave-square"></i>
+          </div>
+          <div>
+            <div class="panel-title">Shannon Entropy Evaluation</div>
+            <div class="panel-subtitle">H = N × log₂(C)</div>
+            
+          </div>
+        </div>
+
+        <div class="panel-body">
+
+          <!-- Entropy value display -->
+          <div class="entropy-value-display">
+            <div class="entropy-bits" id="entropyBits" aria-label="Entropy in bits">0</div>
+            <div class="entropy-unit">bits of entropy</div>
+            <div class="mt-2" id="charsetPills"></div>
+          </div>
+
+          <!-- Score ring & progress -->
+          <div class="score-display mt-3">
+            <div class="score-ring" aria-label="Entropy normalized score ring">
+              <svg viewBox="0 0 70 70">
+                <circle class="score-ring-bg" cx="35" cy="35" r="32" />
+                <circle id="entropyRingFill" class="score-ring-fill" cx="35" cy="35" r="32"
+                        stroke-dasharray="201" stroke-dashoffset="201" />
+              </svg>
+              <div class="score-ring-text">
+                <span id="entropyScore" class="score-number">0</span>
+                <span class="score-label-sm">/100</span>
+              </div>
+            </div>
+            <div class="score-info">
+              <div id="entropyBadge" class="score-strength-badge">—</div>
+              <small class="text-muted d-block mt-1" style="color: white !important;">Normalised Entropy Score</small>
+              <small class="text-muted" style="color: white !important;">Reference: 100 bits max</small>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="progress-wrap" title="Entropy score progress">
+            <div id="entropyProgress" class="progress-bar-animated"></div>
+          </div>
+
+          <!-- Entropy scale labels -->
+          <div class="entropy-scale">
+            <span>0</span>
+            <span class="text-danger">40 (Weak)</span>
+            <span class="text-warning">60 (Medium)</span>
+            <span class="text-info">80 (Strong)</span>
+            <span class="text-success">100+</span>
+          </div>
+
+          <!-- Character set info -->
+          <div class="section-title mt-3"><i class="fas fa-info-circle me-1"></i>Entropy Details</div>
+          <div id="charsetInfo"></div>
+
+        </div>
+      </div>
+
+    </div><!-- /analysis-grid -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     BOTTOM ROW — Pattern + zxcvbn + Hybrid
+══════════════════════════════════════════════════════════════ -->
+<section class="py-2" id="bottomRowSection">
+  <div class="container">
+    <div class="row g-3">
+
+      <!-- Pattern Detection -->
+      <div class="col-lg-4 col-md-6">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div class="panel-icon" style="background:rgba(255,123,114,.15);color:var(--accent-red);">
+              <i class="fas fa-keyboard"></i>
+            </div>
+            <div>
+              <div class="panel-title">Keyboard Pattern Detection</div>
+              <div class="panel-subtitle">qwerty · sequential · repeats</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="mb-3" id="patternStatus"></div>
+
+            <!-- Warning block -->
+            <div id="patternWarning" class="pattern-warning" role="alert" aria-live="polite">
+              <i class="fas fa-triangle-exclamation"></i>
+              <div>
+                <div class="pattern-warning-text">Keyboard Pattern Detected</div>
+                <ul class="pattern-list" id="patternList"></ul>
+              </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-shield-exclamation me-1"></i>Why Patterns Matter</div>
+            <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.7;">
+              Keyboard walk patterns like <code>qwerty</code> or <code>12345</code> are
+              among the first sequences attackers try in dictionary and brute-force attacks.
+              Even complex-looking passwords with patterns are significantly weaker.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- zxcvbn Analysis -->
+      <div class="col-lg-4 col-md-6">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div class="panel-icon zxcvbn-icon">
+              <i class="fas fa-brain"></i>
+            </div>
+            <div>
+              <div class="panel-title">zxcvbn Analysis</div>
+              <div class="panel-subtitle">Realistic crack-time estimator</div>
+            </div>
+          </div>
+          <div class="panel-body">
+
+            <!-- Score dots -->
+            <div class="zxcvbn-score-dots" id="zxcvbnDots" aria-label="zxcvbn score 0 to 4">
+              <div class="score-dot"></div>
+              <div class="score-dot"></div>
+              <div class="score-dot"></div>
+              <div class="score-dot"></div>
+              <div class="score-dot"></div>
+            </div>
+            <div class="mb-3">
+              <span class="text-muted" style="font-size:.78rem;color:white !important;">zxcvbn Score: </span>
+              <strong id="zxcvbnLabel" style="font-size:.9rem;">—</strong>
+            </div>
+
+            <!-- Crack times -->
+            <div class="crack-time-card mb-2">
+              <div class="crack-label"><i class="fas fa-lock me-1"></i>Offline Slow Hash (bcrypt)</div>
+              <div class="crack-value" id="zxcvbnCrack">—</div>
+            </div>
+            <div class="crack-time-card mb-3">
+              <div class="crack-label"><i class="fas fa-wifi me-1"></i>Online (10 attempts/sec)</div>
+              <div class="crack-value" id="zxcvbnOnline">—</div>
+            </div>
+
+            <div class="info-row">
+              <span class="info-key">Guesses Estimate</span>
+              <span class="info-value mono" id="zxcvbnGuesses">—</span>
+            </div>
+
+            <div class="section-title mt-3"><i class="fas fa-comment-dots me-1"></i>Feedback</div>
+            <div id="zxcvbnFeedback"></div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Hybrid Score -->
+      <div class="col-lg-4 col-md-12">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div class="panel-icon hybrid-icon">
+              <i class="fas fa-chart-pie"></i>
+            </div>
+            <div>
+              <div class="panel-title">Hybrid Password Score</div>
+              <div class="panel-subtitle">Weighted combination of all metrics</div>
+            </div>
+          </div>
+          <div class="panel-body">
+
+            <!-- Big score -->
+            <div class="hybrid-score-display text-center mb-3">
+              <div id="hybridBigScore" class="hybrid-big-score">0</div>
+              <div class="mt-1">
+                <div id="hybridBadge" class="score-strength-badge d-inline-flex">—</div>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="progress-wrap mb-3">
+              <div id="hybridProgress" class="progress-bar-animated"></div>
+            </div>
+
+            <!-- Weight formula -->
+            <div class="section-title"><i class="fas fa-scale-balanced me-1"></i>Score Breakdown</div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;font-family:var(--font-mono);">
+              30% Rules + 30% Entropy + 30% zxcvbn + 10% Pattern
+            </div>
+            <div id="hybridBreakdown"></div>
+
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     COMPARISON DASHBOARD
+══════════════════════════════════════════════════════════════ -->
+<section class="py-3" id="dashboardSection">
+  <div class="container">
+    <div class="dashboard-section">
+      <div class="dashboard-header">
+        <div class="panel-icon" style="background:rgba(57,213,255,.12);color:var(--accent-cyan);">
+          <i class="fas fa-chart-bar"></i>
+        </div>
+        <div>
+          <div class="panel-title">Comparative Analysis Dashboard</div>
+          <div class="panel-subtitle">Side-by-side metric comparison with visual chart</div>
+        </div>
+      </div>
+
+      <!-- Score summary grid -->
+      <div class="score-summary-grid" role="region" aria-label="Score summary">
+        <div class="score-summary-cell">
+          <div class="cell-label"><i class="fas fa-list-check me-1"></i>Rules Score</div>
+          <div id="dashRulesScore"  class="cell-score score-medium">—</div>
+          <div id="dashRulesClass" class="cell-classification"></div>
+        </div>
+        <div class="score-summary-cell">
+          <div class="cell-label"><i class="fas fa-wave-square me-1"></i>Entropy Score</div>
+          <div id="dashEntropyScore" class="cell-score score-medium">—</div>
+          <div id="dashEntropyClass" class="cell-classification"></div>
+        </div>
+        <div class="score-summary-cell">
+          <div class="cell-label"><i class="fas fa-brain me-1"></i>zxcvbn Score</div>
+          <div id="dashZxcvbnScore" class="cell-score score-medium">—</div>
+          <div id="dashZxcvbnClass" class="cell-classification"></div>
+        </div>
+        <div class="score-summary-cell">
+          <div class="cell-label"><i class="fas fa-chart-pie me-1"></i>Hybrid Score</div>
+          <div id="dashHybridScore" class="cell-score score-medium">—</div>
+          <div id="dashHybridClass" class="cell-classification"></div>
+        </div>
+      </div>
+
+      <!-- Chart area -->
+      <div class="chart-container">
+        <div class="section-title">
+          <i class="fas fa-chart-mixed me-1"></i>Visual Comparison Chart
+        </div>
+
+        <!-- Placeholder -->
+        <div id="chartPlaceholder" class="placeholder-state" style="min-height:200px;">
+          <i class="fas fa-chart-bar"></i>
+          <p>Analyse a password to generate the comparison chart</p>
+        </div>
+
+        <!-- Chart image -->
+        <img
+          id="comparisonChart"
+          class="chart-img"
+          alt="Password metric comparison chart — bar and radar plots"
+          style="display:none;"
+        />
+      </div>
+
+    </div><!-- /dashboard-section -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SUGGESTIONS SECTION
+══════════════════════════════════════════════════════════════ -->
+<section class="py-3" id="suggestionsSection" style="display:none;">
+  <div class="container">
+    <div class="suggestions-section">
+      <div class="section-title" style="margin-bottom:1rem;">
+        <i class="fas fa-lightbulb me-1" style="color:var(--accent-orange);"></i>
+        Password Improvement Suggestions
+      </div>
+      <div id="suggestionsList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     RESEARCH INFO SECTION
+══════════════════════════════════════════════════════════════ -->
+<section class="py-4">
+  <div class="container">
+    <div class="row g-3">
+
+      <!-- Methodology -->
+      <div class="col-md-6">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div class="panel-icon" style="background:rgba(188,140,255,.12);color:var(--accent-purple);">
+              <i class="fas fa-flask"></i>
+            </div>
+            <div>
+              <div class="panel-title">Research Methodology</div>
+              <div class="panel-subtitle">Evaluation techniques overview</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="info-row">
+              <span class="info-key"><i class="fas fa-check-square me-2 text-info"></i>Rules-Based</span>
+              <span class="info-value" style="font-size:.78rem;">Deterministic checklist scoring</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key"><i class="fas fa-wave-square me-2" style="color:var(--accent-green);"></i>Shannon Entropy</span>
+              <span class="info-value" style="font-size:.78rem;">H = N × log₂(C)</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key"><i class="fas fa-keyboard me-2 text-danger"></i>Pattern Detection</span>
+              <span class="info-value" style="font-size:.78rem;">Keyboard walk analysis</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key"><i class="fas fa-brain me-2" style="color:var(--accent-purple);"></i>zxcvbn</span>
+              <span class="info-value" style="font-size:.78rem;">ML-inspired strength estimator</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key"><i class="fas fa-chart-pie me-2" style="color:var(--accent-cyan);"></i>Hybrid Score</span>
+              <span class="info-value" style="font-size:.78rem;">Weighted composite metric</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Classification Reference -->
+      <div class="col-md-6">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div class="panel-icon" style="background:rgba(240,165,0,.12);color:var(--accent-orange);">
+              <i class="fas fa-table-list"></i>
+            </div>
+            <div>
+              <div class="panel-title">Classification Reference</div>
+              <div class="panel-subtitle">Score ranges and their meaning</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table class="table table-sm mb-0" style="font-size:.82rem;">
+              <thead>
+                <tr style="color:var(--text-muted);border-bottom:1px solid var(--border-primary);">
+                  <th style="background:transparent;color:var(--text-muted);">Score Range</th>
+                  <th style="background:transparent;color:var(--text-muted);">Classification</th>
+                  <th style="background:transparent;color:var(--text-muted);">Entropy</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:var(--accent-red);font-family:var(--font-mono);">0 – 40</td>
+                  <td><span class="score-strength-badge badge-weak" style="display:inline-flex;">Weak</span></td>
+                  <td style="color:var(--text-secondary);font-size:.78rem;">&lt; 40 bits</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent-orange);font-family:var(--font-mono);">41 – 70</td>
+                  <td><span class="score-strength-badge badge-medium" style="display:inline-flex;">Medium</span></td>
+                  <td style="color:var(--text-secondary);font-size:.78rem;">40–60 bits</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent-green);font-family:var(--font-mono);">71 – 90</td>
+                  <td><span class="score-strength-badge badge-strong" style="display:inline-flex;">Strong</span></td>
+                  <td style="color:var(--text-secondary);font-size:.78rem;">60–80 bits</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--accent-cyan);font-family:var(--font-mono);">91 – 100</td>
+                  <td><span class="score-strength-badge badge-vstrong" style="display:inline-flex;">Very Strong</span></td>
+                  <td style="color:var(--text-secondary);font-size:.78rem;">&gt; 80 bits</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="mb-2">
+      <i class="fas fa-shield-halved me-2 text-info"></i>
+      <strong>PassMetric</strong> — Password Strength Comparative Analysis Research
+    </div>
+    
+   
+  </div>
+</footer>
+
+<!-- Bootstrap 5 JS (bundle with Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

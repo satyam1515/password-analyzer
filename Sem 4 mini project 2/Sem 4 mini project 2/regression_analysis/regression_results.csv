@@ -1,0 +1,4 @@
+metric,zxcvbn_model,ttc_model
+R²,0.773,0.9881
+MSE,197.1801,0.8663
+MAE,10.8462,0.6593
